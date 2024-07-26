@@ -16,20 +16,19 @@
 //
 //  Douaille Erwan <douailleerwan@gmail.com>
 
-const Lang = imports.lang;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
-const Main        = imports.ui.main;
-const MessageTray = imports.ui.messageTray;
-
-const TrayMessage = new Lang.Class({
-  Name : 'TrayMessage',
-
-  _init : function(subject, text) {
-    let source = new MessageTray.Source("Shader applet", 'utilities-Shader');
+export class TrayMessage {
+  constructor(subject, text) {
+    let source = new MessageTray.Source(
+      "Shader applet", 
+      'utilities-Shader'
+    );
     Main.messageTray.add(source);
 
     let notification = new MessageTray.Notification(source, subject, text);
     notification.setTransient(true);
     source.notify(notification);
   }
-});
+}

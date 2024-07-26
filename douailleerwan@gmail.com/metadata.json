@@ -1,1 +1,6 @@
-{"description": "Shader menu", "shell-version": ["43.4"], "name": "Shader menu", "uuid": "douailleerwan@gmail.com"}
+{
+  "description": "Shader menu", 
+  "shell-version": ["46.2"], 
+  "name": "Shader menu", 
+  "uuid": "douailleerwan@gmail.com"
+}

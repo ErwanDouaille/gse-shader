@@ -16,103 +16,99 @@
 //
 //  Douaille Erwan <douailleerwan@gmail.com>
 
-const Gio = imports.gi.Gio;
-const { GObject, St } = imports.gi;
+import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
+import St from 'gi://St';
 
-const Lang = imports.lang;
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Slider    = imports.ui.slider;
+import * as ShaderList from './shaderList.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me             = ExtensionUtils.getCurrentExtension();
+export const ShaderMenu = GObject.registerClass(
+  class ShaderMenu extends PanelMenu.Button {
+    constructor(shaderModifier, path) {
+      super(0.0, "ShaderMenu");
+      this._shaderModifier = shaderModifier;
+      this._path = path;
 
-const ShaderList     = Me.imports.shaderList;
+      this._shaderLister = new ShaderList.ShaderList(path);
+      this._initDefaultLogo();
+      this._createMenu();
+    }
 
+    _initDefaultLogo() {
+      let gicon = Gio.icon_new_for_string(this._path + "/" + "logo.png");
+      this._logo = new St.Icon({ gicon: gicon });
+      this.add_child(this._logo);
+    }
 
+    _createMenu() {
+      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+      this._addShaderList();
+      this._addSeparator();
+    }
 
-var ShaderMenu = GObject.registerClass({ GTypeName: 'ShaderMenu' },
-class ShaderMenu extends PanelMenu.Button {
-
-  constructor(shaderModifier) {
-    super(0.0, "ShaderMenu");
-    this._shaderModifier = shaderModifier;
-    this._shaderLister = new ShaderList.ShaderList();
-    this._initDefaultLogo();
-    this._createMenu();
-  }
-
-  _initDefaultLogo() {
-    let gicon = Gio.icon_new_for_string(Me.path + "/" + "logo.png");
-    this._logo = new St.Icon({ gicon: gicon});
-    this.actor.add_actor(this._logo);
-  }
-
-  _createMenu() {
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    this._addShaderList();
-    this._addSeparator();
-  }
-
-  _addSeparator() {
-    let item = new PopupMenu.PopupSeparatorMenuItem('');
-    this.menu.addMenuItem(item);
-  }
-
-  _addShaderList(config, output) {
-    let  item = new PopupMenu.PopupMenuItem(_("Shader menu"));
-    item.label.add_style_class_name('display-subtitle');
-    item.actor.reactive = false;
-    item.actor.can_focus = false;
-    this.menu.addMenuItem(item);
-    this._callbacks = [];
-    let shaderList = this._shaderLister.getShaderList();
-    for ( var i = 0; i <  shaderList.length; i++) {
-      let shader  =  shaderList[i];
-      let item = new PopupMenu.PopupMenuItem(shader.name);
-
-      this._callbacks.push( function() {
-        this._shaderModifier._changeShader(shader);
-        this._removeSlider()
-        if (this._shaderModifier.hasSlider()) this._addSlider();
-        this._sliderChanged(this._slider, 0.5);
-        this._slider.value = 0.5;
-      });
-      item.connect('activate', Lang.bind(this, this._callbacks[i]));
+    _addSeparator() {
+      let item = new PopupMenu.PopupSeparatorMenuItem('');
       this.menu.addMenuItem(item);
     }
-  }
 
-  _addSlider() {
-    this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
-    this.menu.addMenuItem(this._item);
+    _addShaderList(config, output) {
+      let  item = new PopupMenu.PopupMenuItem(_("Shader menu"));
+      item.label.add_style_class_name('display-subtitle');
+      item.reactive = false;
+      item.can_focus = false;
+      this.menu.addMenuItem(item);
+      this._callbacks = [];
+      let shaderList = this._shaderLister.getShaderList();
+      for ( var i = 0; i <  shaderList.length; i++) {
+        let shader  =  shaderList[i];
+        let item = new PopupMenu.PopupMenuItem(shader.name);
 
-    this._slider = new Slider.Slider(.5);
-    this._slider.connect('notify::value', Lang.bind(this, this._sliderChanged));
-    this._slider.can_focus = false;
-    this._slider.value = 0.5;
-    this._sliderChanged(this._slider, this._slider._value);
+        this._callbacks.push(() => {
+          this._shaderModifier._changeShader(shader);
+          this._removeSlider()
+          if (this._shaderModifier.hasSlider()) this._addSlider();
+          this._sliderChanged(this._slider, 0.5);
+          this._slider.value = 0.5;
+        });
+        item.connect('activate', this._callbacks[i]);
+        this.menu.addMenuItem(item);
+      }
+    }
 
-    let icon = new St.Icon({ icon_name: 'view-refresh',
-                             style_class: 'popup-menu-icon' });
-    this._item.actor.add(icon);
-    this._item.actor.add(this._slider.actor);
-  }
+    _addSlider() {
+      this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
+      this.menu.addMenuItem(this._item);
 
-  _removeSlider() {
-    if (this._item) {
-      this._item.destroy();
-      delete this._item;
+      this._slider = new Slider.Slider(.5);
+      this._slider.connect('notify::value', () => this._sliderChanged());
+      this._slider.can_focus = false;
+      this._slider.value = 0.5;
+      this._sliderChanged(this._slider, this._slider._value);
+
+      let icon = new St.Icon({ icon_name: 'view-refresh',
+                              style_class: 'popup-menu-icon' });
+      this._item.add_child(icon);
+      this._item.add_child(this._slider);
+    }
+
+    _removeSlider() {
+      if (this._item) {
+        this._item.destroy();
+        delete this._item;
+      }
+    }
+
+    _clamp(num, min, max) {
+      return num < min ? min : num > max ? max : num;
+    }
+
+    _sliderChanged() {
+      //clamp fixing issue with cogl
+      this._shaderModifier.updateSliderValue(this._clamp(this._slider.value, 0.001, 0.999));
     }
   }
-
-  _clamp(num, min, max) {
-    return num < min ? min : num > max ? max : num;
-  }
-
-  _sliderChanged(slider) {
-    //clamp fixing issue with cogl
-    this._shaderModifier.updateSliderValue(this._clamp(slider.value, 0.001, 0.999));
-  }
-});
+);

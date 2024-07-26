@@ -16,27 +16,23 @@
 //
 //  Douaille Erwan <douailleerwan@gmail.com>
 
-const Main = imports.ui.main;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me             = ExtensionUtils.getCurrentExtension();
-
-const ShaderMenu       = Me.imports.shaderMenu;
-const ShaderModifier = Me.imports.shaderModifier;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as ShaderMenu from './shaderMenu.js';
+import * as ShaderModifier from './shaderModifier.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 let shaderMenu;
 let shaderModifier;
 
-function init(metadata) {
-}
+export default class ShaderExtension extends Extension {
+  enable() {
+    shaderModifier = new ShaderModifier.ShaderModifier(global.stage, this.path);
+    shaderMenu = new ShaderMenu.ShaderMenu(shaderModifier, this.path);
+    Main.panel.addToStatusArea('shaderMenu', shaderMenu);
+  }
 
-function enable() {
-  shaderModifier = new ShaderModifier.ShaderModifier(global.stage);
-  shaderMenu = new ShaderMenu.ShaderMenu(shaderModifier);
-  Main.panel.addToStatusArea('shaderMenu', shaderMenu);
+  disable() {
+    shaderMenu.destroy();
+    shaderModifier.destroy();
+  }
 }
-
-function disable() {
-  shaderMenu.destroy();
-  shaderModifier.destroy();
-};

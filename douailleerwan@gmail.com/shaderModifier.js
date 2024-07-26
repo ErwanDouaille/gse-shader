@@ -16,22 +16,17 @@
 //
 //  Douaille Erwan <douailleerwan@gmail.com>
 
-const Shell   = imports.gi.Shell;
-const Clutter = imports.gi.Clutter;
-const GLib    = imports.gi.GLib;
-const Config = imports.misc.config;
-
-const Lang = imports.lang;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me             = ExtensionUtils.getCurrentExtension();
+import Shell from 'gi://Shell';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 
 const unused = Symbol('unused');
 
-var ShaderModifier = class ShaderModifier {
+export class ShaderModifier {
 
-  constructor(actor) {
+  constructor(actor, path) {
     this._actor = actor;
+    this._path = path;
 
     this._currentShader = {name : "default", fileName : "default.frag" } ;
     this._sliderValue = 0.0;
@@ -53,7 +48,7 @@ var ShaderModifier = class ShaderModifier {
   _applyCurrentShader() {
       this._properties={};
       try {
-        this._shaderSource = Shell.get_file_contents_utf8_sync(Me.path + "/" + this._currentShader.fileName);
+        this._shaderSource = Shell.get_file_contents_utf8_sync(this._path + "/" + this._currentShader.fileName);
       } catch (e) {
         this._shaderSource = null;
         return;
@@ -68,7 +63,7 @@ var ShaderModifier = class ShaderModifier {
           this._newFrame();
           this._actor.add_effect_with_name('shader',  this._fx);
 
-          this._actor.connect('after-paint', Lang.bind(this, this._newFrame));
+          this._actor.connect('after-paint', () => this._newFrame());
         }
       }
   }
@@ -116,7 +111,6 @@ var ShaderModifier = class ShaderModifier {
   }
 
   hasSlider() {
-
     return this._shaderSource && this._shaderSource.includes('slider');
   }
 };

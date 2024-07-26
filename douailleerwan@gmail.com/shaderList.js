@@ -16,23 +16,16 @@
 //
 //  Douaille Erwan <douailleerwan@gmail.com>
 
-const Lang = imports.lang;
+import Gio from 'gi://Gio';
 
-const Gio = imports.gi.Gio;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me             = ExtensionUtils.getCurrentExtension();
-
-var ShaderList = new Lang.Class({
-  Name : 'ShaderList',
-
-  _init : function() {
+export class ShaderList {
+  constructor(path) {
     this._shaderList = new Array();
-    this._dir = Gio.File.new_for_path(Me.path);
+    this._dir = Gio.File.new_for_path(path);
     this._fillShaderList();
-  },
+  }
 
-  _fillShaderList : function() {
+  _fillShaderList() {
     let fileEnum;
     try {
       fileEnum = this._dir.enumerate_children('', Gio.FileQueryInfoFlags.NONE, null);
@@ -48,14 +41,14 @@ var ShaderList = new Lang.Class({
         }
       this._shaderList.sort(function(a, b){return a.name > b.name});
     }
-  },
+  }
 
-  refreshList : function() {
+  refreshList() {
     this._shaderList = new Array();
     this._fillShaderList();
-  },
+  }
 
-  getShaderList : function() {
+  getShaderList() {
     return this._shaderList;
   }
-});
+}
